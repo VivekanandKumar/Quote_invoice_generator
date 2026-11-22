@@ -22,17 +22,10 @@ Handlebars.registerHelper('gt', (a: any, b: any) => a > b);
 // Pre-compile the HBS template
 const compiledInvoiceTemplate = Handlebars.compile(invoiceHbs);
 
-export interface PrintOptions {
-  autoPrint?: boolean;
-  showToolbar?: boolean;
-}
-
 /**
  * Builds the printable HTML document by executing the Handlebars template (invoice.hbs).
  */
-export function buildPrintableHtml(data: DocumentData, options: PrintOptions = {}): string {
-  const { autoPrint = false, showToolbar = true } = options;
-
+export function buildPrintableHtml(data: DocumentData): string {
   const isQuote = data.documentType === 'QUOTE';
   const docTypeName = isQuote ? 'QUOTE' : 'INVOICE';
   const docNum = data.documentNumber || (isQuote ? 'QT-000001' : 'INV-000001');
@@ -153,8 +146,6 @@ export function buildPrintableHtml(data: DocumentData, options: PrintOptions = {
     igstAmount,
     grandTotal,
     notesText,
-    showToolbar,
-    autoPrint,
   };
 
   return compiledInvoiceTemplate(viewModel);

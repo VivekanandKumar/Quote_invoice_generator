@@ -8,7 +8,7 @@ import { SummaryAndNotes } from './components/SummaryAndNotes';
 import { LiveSpreadsheetPreview } from './components/LiveSpreadsheetPreview';
 import type { DocumentData, DocumentType, LineItem, CustomerDetails, SenderDetails } from './types/invoice';
 import { INITIAL_BLANK_DOCUMENT } from './utils/defaultData';
-import { downloadPdf, previewPdf } from './utils/exportPdf';
+import { downloadPdf } from './utils/exportPdf';
 import { FileEdit, Eye, AlertCircle } from 'lucide-react';
 
 export function App() {
@@ -34,7 +34,6 @@ export function App() {
     return 'split';
   });
   const [isDownloading, setIsDownloading] = useState(false);
-  const [isPreviewing, setIsPreviewing] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -80,37 +79,22 @@ export function App() {
       setDownloadSuccess(result.filename);
       setTimeout(() => setDownloadSuccess(null), 4000);
     } catch (err: any) {
-      console.error('Print error:', err);
-      setErrorMessage(err.message || 'Failed to open print dialog. Please allow popups.');
+      console.error('Download error:', err);
+      setErrorMessage(err.message || 'Failed to download PDF.');
     } finally {
       setIsDownloading(false);
     }
   };
 
-  const handlePreview = async () => {
-    try {
-      setIsPreviewing(true);
-      setErrorMessage(null);
-      await previewPdf(data);
-    } catch (err: any) {
-      console.error('Preview error:', err);
-      setErrorMessage(err.message || 'Failed to open preview tab. Please allow popups.');
-    } finally {
-      setIsPreviewing(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans w-full max-w-full overflow-x-hidden">
-      {/* Top Header with Reset, Preview and Download buttons */}
+      {/* Top Header with Reset and Download button */}
       <Header
         documentType={data.documentType}
         onTypeChange={handleTypeChange}
         onReset={handleReset}
-        onPreview={handlePreview}
         onDownload={handleDownload}
         isDownloading={isDownloading}
-        isPreviewing={isPreviewing}
         downloadSuccess={downloadSuccess}
       />
 
