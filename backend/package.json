@@ -1,0 +1,28 @@
+{
+  "name": "quote-invoice-backend",
+  "version": "1.0.0",
+  "main": "dist/server.js",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "bun run --watch src/server.ts",
+    "build": "bun build src/server.ts --outdir ./dist --target node && bun build src/lambda.ts --outdir ./dist --target node",
+    "start": "bun run dist/server.js"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/handlebars": "^4.1.0",
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@sparticuz/chromium": "^153.0.0",
+    "cors": "^2.8.6",
+    "express": "^5.3.0",
+    "handlebars": "^4.7.10",
+    "mongoose": "^9.12.3",
+    "puppeteer-core": "^25.18.1",
+    "serverless-http": "^4.0.0"
+  }
+}

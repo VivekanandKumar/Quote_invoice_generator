@@ -1,0 +1,14 @@
+{
+  "name": "quote-invoice-generator",
+  "version": "1.0.0",
+  "description": "Centralized Quote & Invoice Generator Web App with React, Node.js, Express, Puppeteer PDF streaming and AWS Lambda deployment.",
+  "private": true,
+  "scripts": {
+    "dev:backend": "bun run --cwd backend dev",
+    "dev:frontend": "bun run --cwd frontend dev",
+    "build:backend": "bun run --cwd backend build",
+    "build:frontend": "bun run --cwd frontend build",
+    "build": "bun run build:backend && bun run build:frontend"
+  },
+  "keywords": ["invoice", "quote", "puppeteer", "pdf", "aws-lambda", "serverless", "react", "typescript"]
+}
