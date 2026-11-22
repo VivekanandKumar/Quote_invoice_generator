@@ -448,8 +448,11 @@ const INVOICE_CSS = `
 `;
 
 /**
- * Generates an A4 PDF Blob client-side in the browser using html2canvas & jsPDF.
- * Zero server timeouts, zero cold starts, zero backend dependency.
+ * Generates an A4 PDF Blob client-side in the browser using an isolated iframe,
+ * html2canvas, and jsPDF.
+ * 
+ * Uses an isolated iframe to completely sandbox the render tree away from
+ * Tailwind CSS v4's oklch() color functions, preventing "unsupported color function oklch" errors.
  */
 export async function generateClientPdfBlob(
   data: DocumentData
@@ -459,33 +462,49 @@ export async function generateClientPdfBlob(
   const docNumber = (data.documentNumber || (isQuote ? 'QT-000001' : 'INV-000001')).replace(/[^a-zA-Z0-9_-]/g, '_');
   const filename = `${docType}_${docNumber}.pdf`;
 
-  // Create temporary container offscreen
-  const container = document.createElement('div');
-  container.style.position = 'fixed';
-  container.style.left = '-9999px';
-  container.style.top = '0';
-  container.style.width = '794px';
-  container.style.backgroundColor = '#ffffff';
-  container.style.zIndex = '-9999';
+  // Create an isolated sandbox iframe (shields completely from Tailwind v4's root oklch variables)
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'fixed';
+  iframe.style.left = '-9999px';
+  iframe.style.top = '0';
+  iframe.style.width = '794px';
+  iframe.style.height = '1123px';
+  iframe.style.border = 'none';
+  iframe.style.visibility = 'hidden';
+  document.body.appendChild(iframe);
 
-  // Inject styles and HTML
-  const styleEl = document.createElement('style');
-  styleEl.textContent = INVOICE_CSS;
-  container.appendChild(styleEl);
+  const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+  if (!iframeDoc || !iframe.contentWindow) {
+    if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+    throw new Error('Failed to create isolated document context for PDF rendering.');
+  }
 
-  const wrapper = document.createElement('div');
-  wrapper.innerHTML = buildInvoiceHtml(data);
-  container.appendChild(wrapper);
+  iframeDoc.open();
+  iframeDoc.write(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="utf-8">
+      <style>${INVOICE_CSS}</style>
+    </head>
+    <body style="margin: 0; padding: 0; background: #ffffff;">
+      ${buildInvoiceHtml(data)}
+    </body>
+    </html>
+  `);
+  iframeDoc.close();
 
-  document.body.appendChild(container);
+  // Give the browser a moment to compute styles and layout in the iframe
+  await new Promise((resolve) => setTimeout(resolve, 50));
 
   try {
-    // Capture high-resolution canvas (scale 2 gives crisp 192 DPI print quality)
-    const canvas = await html2canvas(container, {
+    // Capture high-resolution canvas inside the isolated iframe context
+    const canvas = await html2canvas(iframeDoc.body, {
       scale: 2,
       useCORS: true,
       logging: false,
       backgroundColor: '#ffffff',
+      windowWidth: 794,
     });
 
     // Create A4 PDF in jsPDF
@@ -524,6 +543,8 @@ export async function generateClientPdfBlob(
     const pdfBlob = pdf.output('blob');
     return { blob: pdfBlob, filename };
   } finally {
-    document.body.removeChild(container);
+    if (iframe.parentNode) {
+      iframe.parentNode.removeChild(iframe);
+    }
   }
 }
