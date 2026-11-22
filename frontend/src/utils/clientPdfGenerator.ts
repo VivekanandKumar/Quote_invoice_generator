@@ -11,7 +11,7 @@ function parseNumericQty(val: string | number | undefined): number {
 }
 
 /**
- * Builds the standalone HTML string matching the Puppeteer A4 template
+ * Builds the standalone HTML string matching the original Excel / Puppeteer template 1:1
  */
 export function buildInvoiceHtml(data: DocumentData): string {
   const isQuote = data.documentType === 'QUOTE';
@@ -68,7 +68,7 @@ export function buildInvoiceHtml(data: DocumentData): string {
     };
   });
 
-  // Calculate empty padded rows
+  // Calculate empty padded rows (matches original 14 minimum rows)
   const padToRows = data.padToRows || 14;
   const totalRows = Math.max(data.lineItems.length, padToRows);
   const emptyRowCount = Math.max(0, totalRows - data.lineItems.length);
@@ -96,8 +96,8 @@ export function buildInvoiceHtml(data: DocumentData): string {
           <div class="company-title">${data.sender.companyName || 'Business Name'}</div>
           ${senderAddress ? `<div class="sender-address">${senderAddress}</div>` : ''}
           ${data.sender.phone ? `<div class="sender-line">Mobile - ${data.sender.phone}</div>` : ''}
-          ${data.sender.email ? `<div class="sender-line">${data.sender.email}</div>` : ''}
-          ${senderGstin ? `<div class="sender-line">GSTIN: <span class="gstin-val">${senderGstin}</span></div>` : ''}
+          ${data.sender.email ? `<div class="sender-line">Email - ${data.sender.email}</div>` : ''}
+          ${senderGstin ? `<div class="sender-line">GSTIN - <span class="gstin-val">${senderGstin}</span></div>` : ''}
         </div>
 
         <div class="header-right">
@@ -128,8 +128,8 @@ export function buildInvoiceHtml(data: DocumentData): string {
         <div class="customer-name">${data.customer.name || 'Customer Name'}</div>
         ${customerAddress ? `<div class="customer-address">${customerAddress}</div>` : ''}
         ${data.customer.phone ? `<div class="customer-line">Mobile - ${data.customer.phone}</div>` : ''}
-        ${data.customer.email ? `<div class="customer-line">${data.customer.email}</div>` : ''}
-        ${customerGstin ? `<div class="customer-line">GSTIN: <span class="gstin-val">${customerGstin}</span></div>` : ''}
+        ${data.customer.email ? `<div class="customer-line">Email - ${data.customer.email}</div>` : ''}
+        ${customerGstin ? `<div class="customer-line">GSTIN - <span class="gstin-val">${customerGstin}</span></div>` : ''}
       </div>
 
       <!-- Line Items Spreadsheet Table -->
@@ -138,17 +138,17 @@ export function buildInvoiceHtml(data: DocumentData): string {
           <tr>
             <th style="width: 38px; text-align: center;">#</th>
             <th style="text-align: left; width: ${showHsn ? '38%' : '48%'};">Item & Description</th>
-            ${showHsn ? '<th style="width: 80px; text-align: center;">HSN/SRN</th>' : ''}
-            <th style="width: 85px; text-align: right;">Qty</th>
-            <th style="width: 90px; text-align: right;">Rate (₹)</th>
+            ${showHsn ? '<th style="width: 76px; text-align: center;">HSN/SRN</th>' : ''}
+            <th style="width: 80px; text-align: right;">Qty</th>
+            <th style="width: 88px; text-align: right;">Rate (₹)</th>
             ${isIntraState ? `
-              <th style="width: 65px; text-align: right;">CGST</th>
-              <th style="width: 65px; text-align: right;">SGST</th>
+              <th style="width: 62px; text-align: right;">CGST</th>
+              <th style="width: 62px; text-align: right;">SGST</th>
             ` : ''}
             ${isInterState ? `
-              <th style="width: 75px; text-align: right;">IGST</th>
+              <th style="width: 72px; text-align: right;">IGST</th>
             ` : ''}
-            <th style="width: 105px; text-align: right;">Amount (₹)</th>
+            <th style="width: 104px; text-align: right;">Amount (₹)</th>
           </tr>
         </thead>
         <tbody>
@@ -228,55 +228,64 @@ export function buildInvoiceHtml(data: DocumentData): string {
   `;
 }
 
+// 100% matched typography and styles from original Excel / Puppeteer template
 const INVOICE_CSS = `
   * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
   }
-  .invoice-container {
-    width: 794px;
-    padding: 32px 36px;
+  body {
     background: #ffffff;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    color: #0f172a;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+    color: #111827;
     font-size: 11px;
     line-height: 1.4;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  .invoice-container {
+    width: 794px;
+    padding: 22px 26px;
+    background: #ffffff;
+    box-sizing: border-box;
   }
   .header-row {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    padding-bottom: 16px;
+    padding-bottom: 12px;
     border-bottom: 1px solid #e2e8f0;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
   }
   .sender-details {
     max-width: 58%;
   }
   .company-title {
-    font-size: 16px;
-    font-weight: 700;
+    font-size: 15px;
+    font-weight: bold;
     color: #0f172a;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
+    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
   }
   .sender-address {
     font-size: 11px;
-    color: #475569;
+    color: #334155;
     white-space: pre-line;
     line-height: 1.45;
-    margin-bottom: 3px;
+    margin-bottom: 2px;
   }
   .sender-line {
     font-size: 11px;
-    color: #475569;
-    margin-bottom: 2px;
+    color: #334155;
+    margin-bottom: 1px;
   }
   .gstin-val {
     text-transform: uppercase;
     font-weight: 600;
-    font-family: ui-monospace, SFMono-Regular, monospace;
+    letter-spacing: 0.5px;
     color: #0f172a;
   }
   .header-right {
@@ -286,80 +295,88 @@ const INVOICE_CSS = `
     text-align: right;
   }
   .doc-type-title {
-    font-size: 24px;
+    font-size: 26px;
     font-weight: 900;
-    letter-spacing: 1px;
-    color: #0f172a;
-    margin-bottom: 6px;
+    letter-spacing: 1.5px;
+    color: #1e293b;
+    margin-bottom: 4px;
+    line-height: 1;
+    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
   }
   .meta-table {
-    font-size: 11px;
     border-collapse: collapse;
+    margin-left: auto;
+  }
+  .meta-table td {
+    padding: 1.5px 0 1.5px 6px;
+    font-size: 11px;
+    vertical-align: middle;
   }
   .meta-key {
-    font-weight: 700;
+    font-weight: bold;
     color: #334155;
-    padding-right: 8px;
     text-align: left;
     white-space: nowrap;
   }
   .meta-val {
     color: #0f172a;
-    font-weight: 600;
     text-align: left;
     white-space: nowrap;
+    font-weight: 500;
   }
   .bill-to-section {
-    padding-bottom: 14px;
+    margin-bottom: 10px;
     max-width: 60%;
   }
   .bill-to-title {
+    font-weight: bold;
     font-size: 11px;
-    font-weight: 700;
-    color: #475569;
+    color: #334155;
     margin-bottom: 2px;
   }
   .customer-name {
+    font-weight: bold;
     font-size: 12px;
-    font-weight: 700;
     color: #0f172a;
-    margin-bottom: 2px;
+    margin-bottom: 1px;
   }
   .customer-address {
     font-size: 11px;
-    color: #475569;
+    color: #334155;
     white-space: pre-line;
     line-height: 1.45;
     margin-bottom: 2px;
   }
   .customer-line {
     font-size: 11px;
-    color: #475569;
-    margin-bottom: 1px;
+    color: #334155;
   }
   .items-table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 16px;
-    border: 1px solid #cbd5e1;
+    margin-top: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #94a3b8;
+    table-layout: fixed;
   }
   .items-table thead th {
-    background-color: #f8fafc;
-    color: #334155;
+    background-color: #f1f5f9;
+    color: #0f172a;
+    font-weight: bold;
     font-size: 10.5px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: 7px 8px;
+    padding: 6px 8px;
     border: 1px solid #cbd5e1;
     border-bottom: 2px solid #94a3b8;
+    text-align: left;
+    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
   }
   .items-table tbody td {
-    padding: 6px 8px;
-    font-size: 11px;
-    color: #1e293b;
+    padding: 4.5px 8px;
     border: 1px solid #e2e8f0;
+    font-size: 10.5px;
     vertical-align: top;
+    word-break: break-word;
+    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
   }
   .cell-center {
     text-align: center;
@@ -376,74 +393,74 @@ const INVOICE_CSS = `
   }
   .item-desc {
     font-size: 10px;
-    color: #64748b;
-    margin-top: 1px;
+    color: #475569;
     white-space: pre-line;
+    margin-top: 2px;
   }
   .font-mono {
-    font-family: ui-monospace, SFMono-Regular, monospace;
+    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
   }
   .text-muted {
-    color: #cbd5e1;
+    color: #94a3b8;
   }
   .empty-row td {
-    height: 22px;
-    padding: 2px 8px;
-    border: 1px solid #f1f5f9;
+    height: 19px;
+    border: 1px solid #e2e8f0;
+    color: #94a3b8;
   }
-  .summary-subtotal-row td {
-    border-top: 2px solid #cbd5e1;
-    padding: 6px 8px;
+  .summary-subtotal-row td,
+  .summary-tax-row td {
+    border: 1px solid #cbd5e1;
+    padding: 4.5px 8px;
   }
   .summary-label {
+    font-weight: bold;
     text-align: right;
-    font-weight: 700;
-    color: #475569;
-    font-size: 11px;
+    color: #1e293b;
+    font-size: 10.5px;
   }
   .summary-val {
+    font-weight: bold;
     text-align: right;
-    font-weight: 700;
     color: #0f172a;
-    font-size: 11px;
-  }
-  .summary-tax-row td {
-    padding: 4px 8px;
+    font-size: 10.5px;
+    white-space: nowrap;
   }
   .grand-total-row td {
     background-color: #f8fafc;
-    border-top: 2px solid #0f172a;
-    border-bottom: 2px solid #0f172a;
-    padding: 8px;
+    border: 1px solid #cbd5e1;
+    border-top: 2px solid #64748b;
+    border-bottom: 3px double #0f172a;
+    padding: 6px 8px;
   }
   .grand-total-label {
     text-align: right;
-    font-size: 12px;
-    font-weight: 900;
+    font-size: 11.5px;
+    font-weight: bold;
     color: #0f172a;
     text-transform: uppercase;
   }
   .grand-total-val {
     text-align: right;
-    font-size: 13px;
-    font-weight: 900;
-    color: #0f172a;
+    font-size: 12.5px;
+    font-weight: bold;
+    color: #047857;
+    white-space: nowrap;
   }
   .notes-container {
-    margin-top: 16px;
-    padding-top: 10px;
-    border-top: 1px solid #e2e8f0;
+    margin-top: 10px;
     font-size: 10.5px;
+    color: #334155;
+    line-height: 1.45;
   }
   .notes-title {
-    font-weight: 700;
+    font-weight: bold;
     color: #334155;
-    margin-bottom: 3px;
+    margin-bottom: 2px;
   }
   .notes-body {
     color: #475569;
     white-space: pre-line;
-    line-height: 1.45;
   }
 `;
 
@@ -451,8 +468,7 @@ const INVOICE_CSS = `
  * Generates an A4 PDF Blob client-side in the browser using an isolated iframe,
  * html2canvas, and jsPDF.
  * 
- * Uses an isolated iframe to completely sandbox the render tree away from
- * Tailwind CSS v4's oklch() color functions, preventing "unsupported color function oklch" errors.
+ * Accurately fits content to 1 page without generating an accidental blank page 2.
  */
 export async function generateClientPdfBlob(
   data: DocumentData
@@ -467,8 +483,8 @@ export async function generateClientPdfBlob(
   iframe.style.position = 'fixed';
   iframe.style.left = '-9999px';
   iframe.style.top = '0';
-  iframe.style.width = '794px';
-  iframe.style.height = '1123px';
+  iframe.style.width = '800px';
+  iframe.style.height = '1150px';
   iframe.style.border = 'none';
   iframe.style.visibility = 'hidden';
   document.body.appendChild(iframe);
@@ -487,24 +503,26 @@ export async function generateClientPdfBlob(
       <meta charset="utf-8">
       <style>${INVOICE_CSS}</style>
     </head>
-    <body style="margin: 0; padding: 0; background: #ffffff;">
+    <body>
       ${buildInvoiceHtml(data)}
     </body>
     </html>
   `);
   iframeDoc.close();
 
-  // Give the browser a moment to compute styles and layout in the iframe
-  await new Promise((resolve) => setTimeout(resolve, 50));
+  // Wait for layout and fonts to settle in the iframe
+  await new Promise((resolve) => setTimeout(resolve, 60));
 
   try {
-    // Capture high-resolution canvas inside the isolated iframe context
-    const canvas = await html2canvas(iframeDoc.body, {
+    const targetElement = (iframeDoc.querySelector('.invoice-container') as HTMLElement) || iframeDoc.body;
+
+    // Capture high-resolution canvas inside the isolated iframe context (scale: 2 = 192 DPI print sharpness)
+    const canvas = await html2canvas(targetElement, {
       scale: 2,
       useCORS: true,
       logging: false,
       backgroundColor: '#ffffff',
-      windowWidth: 794,
+      windowWidth: 800,
     });
 
     // Create A4 PDF in jsPDF
@@ -519,20 +537,25 @@ export async function generateClientPdfBlob(
     const pdfHeight = 297;
     const imgData = canvas.toDataURL('image/jpeg', 0.98);
 
-    // Calculate proportional height
+    // Calculate proportional height in millimeters
     const imgHeight = (canvas.height * pdfWidth) / canvas.width;
 
-    if (imgHeight <= pdfHeight) {
-      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, imgHeight, undefined, 'FAST');
+    // Single-page invoice fit:
+    // If the content height is within standard A4 (+ 25mm margin headroom), fit cleanly onto exactly 1 page
+    // to strictly prevent an accidental trailing blank 2nd page!
+    if (imgHeight <= pdfHeight + 25) {
+      const renderHeight = Math.min(imgHeight, pdfHeight);
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, renderHeight, undefined, 'FAST');
     } else {
-      // If content exceeds 1 page, render multi-page
+      // True multi-page handling only when line items genuinely exceed A4 height
       let heightLeft = imgHeight;
       let position = 0;
 
       pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight, undefined, 'FAST');
       heightLeft -= pdfHeight;
 
-      while (heightLeft > 0) {
+      // Only add a new page if more than 30mm of real content remains
+      while (heightLeft > 30) {
         position = heightLeft - imgHeight;
         pdf.addPage();
         pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight, undefined, 'FAST');

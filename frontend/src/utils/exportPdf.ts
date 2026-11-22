@@ -1,10 +1,10 @@
 import type { DocumentData } from '../types/invoice';
-import { generateClientPdfBlob } from './clientPdfGenerator';
+import { generateVectorPdfBlob } from './vectorPdfGenerator';
 
 /**
- * Retrieves the PDF Blob either from the backend or instantly client-side.
- * Never times out: if the backend is sleeping or slow (> 6s), it automatically
- * falls back to generating the exact high-fidelity PDF in the user's browser.
+ * Retrieves the PDF Blob either from the backend or instantly client-side using pure vector pdfMake.
+ * Never times out: if the backend is sleeping or slow (> 6s), or if running as a static GitHub Pages site,
+ * it instantly generates the razor-sharp vector PDF directly in the user's browser.
  */
 async function getPdfBlob(
   documentData: DocumentData,
@@ -42,12 +42,12 @@ async function getPdfBlob(
         return { blob: pdfBlob, filename };
       }
     } catch (err) {
-      console.warn('[PDF] Remote backend timed out or unreachable. Falling back to high-speed client-side PDF generation.', err);
+      console.warn('[PDF] Remote backend timed out or unreachable. Falling back to high-speed vector PDF generation.', err);
     }
   }
 
-  // Instant Client-Side Generation (0 timeouts, 0 server costs, pure browser engine)
-  return await generateClientPdfBlob(documentData);
+  // Instant Client-Side Vector Generation (0 timeouts, 0 server costs, 100% vector text & sharp zoom)
+  return await generateVectorPdfBlob(documentData);
 }
 
 /**
