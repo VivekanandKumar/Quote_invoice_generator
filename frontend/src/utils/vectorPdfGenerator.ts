@@ -4,7 +4,7 @@ import type { TDocumentDefinitions, TableCell } from 'pdfmake/interfaces';
 import type { DocumentData, LineItem } from '../types/invoice';
 import { formatCurrency } from './defaultData';
 
-// Initialize pdfMake virtual file system for default fonts
+// Initialize pdfMake virtual file system with default fallback fonts
 const anyPdfMake = (pdfMake as any)?.default || pdfMake;
 const anyFonts = (pdfFonts as any)?.default || pdfFonts;
 const vfs = anyFonts?.pdfMake?.vfs || anyFonts?.default?.vfs || anyFonts?.vfs || anyFonts?.default || anyFonts;
@@ -14,6 +14,70 @@ if (typeof anyPdfMake.addVirtualFileSystem === 'function') {
 }
 anyPdfMake.vfs = vfs;
 
+let arialLoaded = false;
+
+/**
+ * Loads Arial font (matching Puppeteer typography exactly)
+ * Bundled in frontend/public/fonts/arial.ttf and arialbd.ttf.
+ */
+async function loadArialFonts(): Promise<string> {
+  if (arialLoaded) return 'Arial';
+
+  try {
+    if (typeof window !== 'undefined' && typeof window.fetch === 'function') {
+      const [regRes, boldRes] = await Promise.all([
+        fetch('./fonts/arial.ttf'),
+        fetch('./fonts/arialbd.ttf'),
+      ]);
+
+      if (regRes.ok && boldRes.ok) {
+        const [regBuf, boldBuf] = await Promise.all([
+          regRes.arrayBuffer(),
+          boldRes.arrayBuffer(),
+        ]);
+
+        const toBase64 = (buf: ArrayBuffer): string => {
+          let binary = '';
+          const bytes = new Uint8Array(buf);
+          const len = bytes.byteLength;
+          for (let i = 0; i < len; i++) {
+            binary += String.fromCharCode(bytes[i]);
+          }
+          return window.btoa(binary);
+        };
+
+        const arialVfs = {
+          'Arial-Regular.ttf': toBase64(regBuf),
+          'Arial-Bold.ttf': toBase64(boldBuf),
+        };
+
+        if (typeof anyPdfMake.addVirtualFileSystem === 'function') {
+          anyPdfMake.addVirtualFileSystem(arialVfs);
+        } else if (anyPdfMake.vfs) {
+          Object.assign(anyPdfMake.vfs, arialVfs);
+        }
+
+        anyPdfMake.fonts = {
+          ...(anyPdfMake.fonts || {}),
+          Arial: {
+            normal: 'Arial-Regular.ttf',
+            bold: 'Arial-Bold.ttf',
+            italics: 'Arial-Regular.ttf',
+            bolditalics: 'Arial-Bold.ttf',
+          },
+        };
+
+        arialLoaded = true;
+        return 'Arial';
+      }
+    }
+  } catch (err) {
+    console.warn('[PDF] Arial font loading notice (using standard fallback):', err);
+  }
+
+  return 'Roboto';
+}
+
 function parseNumericQty(val: string | number | undefined): number {
   if (typeof val === 'number') return val;
   if (!val) return 0;
@@ -22,10 +86,9 @@ function parseNumericQty(val: string | number | undefined): number {
 }
 
 /**
- * Builds a 100% Vector PDF definition matching the live preview & original template layout.
- * Everything is native PDF vector paths and fonts (sharp at any zoom, 1-page guaranteed).
+ * Builds a 100% Vector PDF definition exactly matching the Puppeteer HTML template layout and typography.
  */
-export function buildVectorPdfDefinition(data: DocumentData): TDocumentDefinitions {
+export function buildVectorPdfDefinition(data: DocumentData, fontName = 'Arial'): TDocumentDefinitions {
   const isQuote = data.documentType === 'QUOTE';
   const docTypeName = isQuote ? 'QUOTE' : 'INVOICE';
   const docNumLabel = isQuote ? 'Quote#' : 'Invoice#';
@@ -80,7 +143,7 @@ export function buildVectorPdfDefinition(data: DocumentData): TDocumentDefinitio
     };
   });
 
-  // Calculate empty padded rows (exact 14 rows minimum matching original sheet)
+  // Calculate empty padded rows (14 rows minimum matching original Excel sheet and Puppeteer)
   const padToRows = data.padToRows || 14;
   const totalRows = Math.max(data.lineItems.length, padToRows);
   const emptyRowCount = Math.max(0, totalRows - data.lineItems.length);
@@ -90,18 +153,18 @@ export function buildVectorPdfDefinition(data: DocumentData): TDocumentDefinitio
     { text: '#', style: 'tableHeader', alignment: 'center' },
     { text: 'Item & Description', style: 'tableHeader', alignment: 'left' },
   ];
-  const tableWidths: (number | string)[] = [22, '*'];
+  const tableWidths: (number | string)[] = [24, '*'];
 
   if (showHsn) {
     tableHeaders.push({ text: 'HSN/SRN', style: 'tableHeader', alignment: 'center' });
-    tableWidths.push(54);
+    tableWidths.push(56);
   }
 
   tableHeaders.push({ text: 'Qty', style: 'tableHeader', alignment: 'right' });
-  tableWidths.push(46);
+  tableWidths.push(52);
 
   tableHeaders.push({ text: 'Rate (₹)', style: 'tableHeader', alignment: 'right' });
-  tableWidths.push(58);
+  tableWidths.push(62);
 
   if (isIntraState) {
     tableHeaders.push({ text: 'CGST', style: 'tableHeader', alignment: 'right' });
@@ -116,7 +179,7 @@ export function buildVectorPdfDefinition(data: DocumentData): TDocumentDefinitio
   }
 
   tableHeaders.push({ text: 'Amount (₹)', style: 'tableHeader', alignment: 'right' });
-  tableWidths.push(70);
+  tableWidths.push(74);
 
   const totalCols = tableHeaders.length;
   const summaryColSpan = totalCols - 1;
@@ -127,213 +190,220 @@ export function buildVectorPdfDefinition(data: DocumentData): TDocumentDefinitio
   // Data rows
   formattedItems.forEach((item) => {
     const row: TableCell[] = [
-      { text: String(item.index), alignment: 'center', fontSize: 8.5, color: '#334155' },
+      { text: String(item.index), alignment: 'center', fontSize: 9.5, color: '#64748b' },
       {
         stack: [
-          { text: item.name, bold: true, fontSize: 8.5, color: '#0f172a' },
-          ...(item.description ? [{ text: item.description, fontSize: 7.5, color: '#64748b', margin: [0, 1, 0, 0] }] : []),
+          { text: item.name, bold: true, fontSize: 9.5, color: '#0f172a' },
+          ...(item.description ? [{ text: item.description, fontSize: 8, color: '#475569', margin: [0, 1.5, 0, 0] }] : []),
         ] as any,
       },
     ];
 
     if (showHsn) {
-      row.push({ text: item.hsnCode, alignment: 'center', fontSize: 8, color: '#334155' });
+      row.push({ text: item.hsnCode, alignment: 'center', fontSize: 9, color: '#334155' });
     }
 
-    row.push({ text: item.qtyDisplay, alignment: 'right', fontSize: 8.5, color: '#0f172a' });
-    row.push({ text: item.rateDisplay, alignment: 'right', fontSize: 8.5, color: '#0f172a' });
+    row.push({ text: item.qtyDisplay, alignment: 'right', fontSize: 9.5, color: '#0f172a' });
+    row.push({ text: item.rateDisplay, alignment: 'right', fontSize: 9.5, color: '#0f172a' });
 
     if (isIntraState) {
-      row.push({ text: item.cgstDisplay, alignment: 'right', fontSize: 8, color: '#334155' });
-      row.push({ text: item.sgstDisplay, alignment: 'right', fontSize: 8, color: '#334155' });
+      row.push({ text: item.cgstDisplay, alignment: 'right', fontSize: 9, color: '#334155' });
+      row.push({ text: item.sgstDisplay, alignment: 'right', fontSize: 9, color: '#334155' });
     }
 
     if (isInterState) {
-      row.push({ text: item.igstDisplay, alignment: 'right', fontSize: 8, color: '#334155' });
+      row.push({ text: item.igstDisplay, alignment: 'right', fontSize: 9, color: '#334155' });
     }
 
-    row.push({ text: item.amountDisplay, alignment: 'right', bold: true, fontSize: 8.5, color: '#0f172a' });
+    row.push({ text: item.amountDisplay, alignment: 'right', bold: true, fontSize: 9.5, color: '#0f172a' });
 
     tableBody.push(row);
   });
 
-  // Empty padded rows (matches 14 rows layout cleanly without overflowing A4)
+  // Empty padded rows (generous 18pt row height matching Puppeteer and original Excel sheet)
   for (let i = 0; i < emptyRowCount; i++) {
     const rowNum = data.lineItems.length + i + 1;
     const emptyRow: TableCell[] = [
-      { text: String(rowNum), alignment: 'center', fontSize: 8, color: '#cbd5e1' },
-      { text: '', fontSize: 8 },
+      { text: String(rowNum), alignment: 'center', fontSize: 9, color: '#94a3b8' },
+      { text: ' ', fontSize: 9 },
     ];
-    if (showHsn) emptyRow.push({ text: '', fontSize: 8 });
-    emptyRow.push({ text: '', fontSize: 8 });
-    emptyRow.push({ text: '', fontSize: 8 });
+    if (showHsn) emptyRow.push({ text: ' ', fontSize: 9 });
+    emptyRow.push({ text: ' ', fontSize: 9 });
+    emptyRow.push({ text: ' ', fontSize: 9 });
     if (isIntraState) {
-      emptyRow.push({ text: '', fontSize: 8 });
-      emptyRow.push({ text: '', fontSize: 8 });
+      emptyRow.push({ text: ' ', fontSize: 9 });
+      emptyRow.push({ text: ' ', fontSize: 9 });
     }
     if (isInterState) {
-      emptyRow.push({ text: '', fontSize: 8 });
+      emptyRow.push({ text: ' ', fontSize: 9 });
     }
-    emptyRow.push({ text: '', fontSize: 8 });
+    emptyRow.push({ text: ' ', fontSize: 9 });
     tableBody.push(emptyRow);
   }
 
   // Summary Rows
-  const buildSummaryRow = (label: string, value: string, isTotal = false): TableCell[] => {
+  const buildSummaryRow = (label: string, value: string, isTotal = false, isTax = false): TableCell[] => {
     const emptyCols: TableCell[] = Array.from({ length: summaryColSpan - 1 }).map(() => ({ text: '' }));
     return [
       {
         text: label,
         colSpan: summaryColSpan,
         alignment: 'right',
-        bold: true,
-        fontSize: isTotal ? 9.5 : 8.5,
-        color: isTotal ? '#0f172a' : '#334155',
+        bold: isTotal || !isTax,
+        fontSize: isTotal ? 10.5 : 9.5,
+        color: isTotal ? '#0f172a' : isTax ? '#475569' : '#1e293b',
         fillColor: isTotal ? '#f8fafc' : undefined,
       },
       ...emptyCols,
       {
         text: value,
         alignment: 'right',
-        bold: true,
-        fontSize: isTotal ? 10 : 8.5,
+        bold: isTotal || !isTax,
+        fontSize: isTotal ? 11 : 9.5,
         color: isTotal ? '#047857' : '#0f172a',
         fillColor: isTotal ? '#f8fafc' : undefined,
       },
     ];
   };
 
-  tableBody.push(buildSummaryRow('Sub Total:', `₹ ${formatCurrency(subTotal)}`));
+  tableBody.push(buildSummaryRow('Sub Total', `₹ ${formatCurrency(subTotal)}`));
 
   if (isIntraState) {
-    tableBody.push(buildSummaryRow(`CGST (${data.taxSettings?.cgstRate ?? 9}%):`, `₹ ${formatCurrency(cgstAmount)}`));
-    tableBody.push(buildSummaryRow(`SGST (${data.taxSettings?.sgstRate ?? 9}%):`, `₹ ${formatCurrency(sgstAmount)}`));
+    tableBody.push(buildSummaryRow(`CGST (${data.taxSettings?.cgstRate ?? 9}%)`, `₹ ${formatCurrency(cgstAmount)}`, false, true));
+    tableBody.push(buildSummaryRow(`SGST (${data.taxSettings?.sgstRate ?? 9}%)`, `₹ ${formatCurrency(sgstAmount)}`, false, true));
   }
 
   if (isInterState) {
-    tableBody.push(buildSummaryRow(`IGST (${data.taxSettings?.igstRate ?? 18}%):`, `₹ ${formatCurrency(igstAmount)}`));
+    tableBody.push(buildSummaryRow(`IGST (${data.taxSettings?.igstRate ?? 18}%)`, `₹ ${formatCurrency(igstAmount)}`, false, true));
   }
 
-  tableBody.push(buildSummaryRow('Total:', `₹ ${formatCurrency(grandTotal)}`, true));
+  tableBody.push(buildSummaryRow('Total', `₹ ${formatCurrency(grandTotal)}`, true));
 
   // Sender details content
   const senderStack: any[] = [
-    { text: data.sender.companyName || 'Business Name', bold: true, fontSize: 13, color: '#0f172a', margin: [0, 0, 0, 2] },
+    { text: data.sender.companyName || 'Business Name', bold: true, fontSize: 14, color: '#0f172a', margin: [0, 0, 0, 3] },
   ];
   if (data.sender.address) {
-    senderStack.push({ text: data.sender.address, fontSize: 8.5, color: '#334155', margin: [0, 0, 0, 1.5] });
+    senderStack.push({ text: data.sender.address, fontSize: 9.5, color: '#334155', margin: [0, 0, 0, 2] });
   }
   if (data.sender.phone) {
-    senderStack.push({ text: `Mobile - ${data.sender.phone}`, fontSize: 8.5, color: '#334155', margin: [0, 0, 0, 1] });
+    senderStack.push({ text: `Mobile - ${data.sender.phone}`, fontSize: 9.5, color: '#334155', margin: [0, 0, 0, 1] });
   }
   if (data.sender.email) {
-    senderStack.push({ text: `Email - ${data.sender.email}`, fontSize: 8.5, color: '#334155', margin: [0, 0, 0, 1] });
+    senderStack.push({ text: `Email - ${data.sender.email}`, fontSize: 9.5, color: '#334155', margin: [0, 0, 0, 1] });
   }
   if (data.sender.gstin) {
     senderStack.push({
       text: [
-        { text: 'GSTIN - ', fontSize: 8.5, color: '#334155' },
-        { text: data.sender.gstin.toUpperCase(), bold: true, fontSize: 8.5, color: '#0f172a' },
+        { text: 'GSTIN - ', fontSize: 9.5, color: '#334155' },
+        { text: data.sender.gstin.toUpperCase(), bold: true, fontSize: 9.5, color: '#0f172a' },
       ],
       margin: [0, 0, 0, 1],
     });
   }
 
-  // Document metadata table
+  // Document metadata table (compact and right-aligned directly under QUOTE/INVOICE)
   const metaRows: TableCell[][] = [
     [
-      { text: docNumLabel, bold: true, fontSize: 8.5, color: '#334155' },
-      { text: `: ${data.documentNumber || '—'}`, bold: true, fontSize: 8.5, color: '#0f172a' },
+      { text: docNumLabel, bold: true, fontSize: 9.5, color: '#334155', alignment: 'left' },
+      { text: `: ${data.documentNumber || '—'}`, bold: true, fontSize: 9.5, color: '#0f172a', alignment: 'left' },
     ],
     [
-      { text: docDateLabel, bold: true, fontSize: 8.5, color: '#334155' },
-      { text: `: ${data.documentDate || '—'}`, fontSize: 8.5, color: '#0f172a' },
+      { text: docDateLabel, bold: true, fontSize: 9.5, color: '#334155', alignment: 'left' },
+      { text: `: ${data.documentDate || '—'}`, fontSize: 9.5, color: '#0f172a', alignment: 'left' },
     ],
   ];
 
   if (data.dueDate) {
     metaRows.push([
-      { text: 'Due Date', bold: true, fontSize: 8.5, color: '#334155' },
-      { text: `: ${data.dueDate}`, fontSize: 8.5, color: '#0f172a' },
+      { text: 'Due Date', bold: true, fontSize: 9.5, color: '#334155', alignment: 'left' },
+      { text: `: ${data.dueDate}`, fontSize: 9.5, color: '#0f172a', alignment: 'left' },
     ]);
   }
 
   // Customer bill-to stack
   const customerStack: any[] = [
-    { text: 'Bill To', bold: true, fontSize: 9, color: '#334155', margin: [0, 0, 0, 2] },
-    { text: data.customer.name || 'Customer Name', bold: true, fontSize: 9.5, color: '#0f172a', margin: [0, 0, 0, 1.5] },
+    { text: 'Bill To', bold: true, fontSize: 9.5, color: '#334155', margin: [0, 0, 0, 2] },
+    { text: data.customer.name || 'Customer Name', bold: true, fontSize: 10.5, color: '#0f172a', margin: [0, 0, 0, 1.5] },
   ];
   if (data.customer.address) {
-    customerStack.push({ text: data.customer.address, fontSize: 8.5, color: '#334155', margin: [0, 0, 0, 1] });
+    customerStack.push({ text: data.customer.address, fontSize: 9.5, color: '#334155', margin: [0, 0, 0, 1.5] });
   }
   if (data.customer.phone) {
-    customerStack.push({ text: `Mobile - ${data.customer.phone}`, fontSize: 8.5, color: '#334155', margin: [0, 0, 0, 1] });
+    customerStack.push({ text: `Mobile: ${data.customer.phone}`, fontSize: 9.5, color: '#334155', margin: [0, 0, 0, 1] });
   }
   if (data.customer.email) {
-    customerStack.push({ text: `Email - ${data.customer.email}`, fontSize: 8.5, color: '#334155', margin: [0, 0, 0, 1] });
+    customerStack.push({ text: `Email: ${data.customer.email}`, fontSize: 9.5, color: '#334155', margin: [0, 0, 0, 1] });
   }
   if (data.customer.gstin) {
     customerStack.push({
       text: [
-        { text: 'GSTIN - ', fontSize: 8.5, color: '#334155' },
-        { text: data.customer.gstin.toUpperCase(), bold: true, fontSize: 8.5, color: '#0f172a' },
+        { text: 'GSTIN: ', fontSize: 9.5, color: '#334155' },
+        { text: data.customer.gstin.toUpperCase(), bold: true, fontSize: 9.5, color: '#0f172a' },
       ],
       margin: [0, 0, 0, 1],
     });
   }
 
-  // Return Complete pdfMake document definition
+  // Return complete pdfMake document definition
   return {
     pageSize: 'A4',
     pageOrientation: 'portrait',
-    pageMargins: [26, 22, 26, 20],
+    pageMargins: [24, 24, 24, 22],
     defaultStyle: {
-      font: 'Roboto',
-      fontSize: 8.5,
-      color: '#1e293b',
-      lineHeight: 1.25,
+      font: fontName,
+      fontSize: 9.5,
+      color: '#111827',
+      lineHeight: 1.35,
     },
     styles: {
       tableHeader: {
-        fontSize: 8.5,
+        fontSize: 9.5,
         bold: true,
         color: '#0f172a',
         fillColor: '#f1f5f9',
       },
     },
     content: [
-      // Header: Sender (Left) & Title/Meta (Right)
+      // Top Header Row: Sender (Left) & Title + Meta (Right)
       {
         columns: [
-          { width: '60%', stack: senderStack as any },
+          { width: '58%', stack: senderStack },
           {
-            width: '40%',
+            width: '42%',
             stack: [
-              { text: docTypeName, fontSize: 22, bold: true, alignment: 'right', color: '#1e293b', margin: [0, 0, 0, 4] },
+              { text: docTypeName, fontSize: 24, bold: true, alignment: 'right', color: '#1e293b', margin: [0, 0, 0, 4] },
+              // Neatly right-align the compact metadata table under QUOTE without stretching
               {
-                table: {
-                  widths: ['auto', '*'],
-                  body: metaRows,
-                },
-                layout: 'noBorders',
-                alignment: 'right',
+                columns: [
+                  { width: '*', text: '' },
+                  {
+                    width: 'auto',
+                    table: {
+                      widths: [68, 80],
+                      body: metaRows,
+                    },
+                    layout: {
+                      hLineWidth: () => 0,
+                      vLineWidth: () => 0,
+                      paddingLeft: () => 0,
+                      paddingRight: () => 4,
+                      paddingTop: () => 1.5,
+                      paddingBottom: () => 1.5,
+                    },
+                  },
+                ],
               },
             ],
           },
         ],
-        margin: [0, 0, 0, 10],
+        margin: [0, 0, 0, 12],
       },
 
-      // Divider line
+      // Bill To Section (Below Sender on Left, clean whitespace matching Puppeteer)
       {
-        canvas: [{ type: 'line', x1: 0, y1: 0, x2: 542, y2: 0, lineWidth: 0.5, lineColor: '#e2e8f0' }],
-        margin: [0, 0, 0, 8],
-      },
-
-      // Bill To Section
-      {
-        stack: customerStack as any,
-        margin: [0, 0, 0, 10],
+        stack: customerStack,
+        margin: [0, 0, 0, 12],
       },
 
       // Line Items Spreadsheet Table
@@ -346,31 +416,30 @@ export function buildVectorPdfDefinition(data: DocumentData): TDocumentDefinitio
         layout: {
           hLineWidth: (i, node) => {
             if (i === 0 || i === node.table.body.length) return 0.8;
-            if (i === 1) return 1.2;
-            if (i === node.table.body.length - 1) return 1;
-            return 0.4;
+            if (i === 1) return 1.5;
+            if (i === node.table.body.length - 1) return 1.2;
+            return 0.5;
           },
-          vLineWidth: () => 0.4,
+          vLineWidth: () => 0.5,
           hLineColor: (i, node) => {
             if (i === 0 || i === node.table.body.length) return '#94a3b8';
-            if (i === 1) return '#64748b';
-            if (i === node.table.body.length - 1) return '#0f172a';
-            return '#cbd5e1';
+            if (i === 1) return '#94a3b8';
+            if (i === node.table.body.length - 1) return '#64748b';
+            return '#e2e8f0';
           },
           vLineColor: () => '#cbd5e1',
-          paddingLeft: () => 5,
-          paddingRight: () => 5,
-          paddingTop: () => 2.5,
-          paddingBottom: () => 2.5,
+          paddingLeft: () => 6,
+          paddingRight: () => 6,
+          paddingTop: () => 4.5,
+          paddingBottom: () => 4.5,
         },
       },
 
       // Notes & Terms
       ...(data.notes ? [{
-        margin: [0, 10, 0, 0] as [number, number, number, number],
+        margin: [0, 14, 0, 0] as [number, number, number, number],
         stack: [
-          { text: 'Notes / Terms:', bold: true, fontSize: 8.5, color: '#334155', margin: [0, 0, 0, 2] },
-          { text: data.notes.trim(), fontSize: 8, color: '#475569', lineHeight: 1.3 },
+          { text: data.notes.trim(), fontSize: 9.5, color: '#334155', lineHeight: 1.4 },
         ],
       }] : []),
     ],
@@ -379,7 +448,7 @@ export function buildVectorPdfDefinition(data: DocumentData): TDocumentDefinitio
 
 /**
  * Generates a 100% Vector PDF Blob client-side using pdfMake.
- * Text is crystal clear at any zoom level, fully selectable, and 1-page guaranteed.
+ * Text is crystal clear at any zoom level, matches Puppeteer typography (Arial), and strictly fits 1 page.
  */
 export async function generateVectorPdfBlob(
   data: DocumentData
@@ -389,7 +458,10 @@ export async function generateVectorPdfBlob(
   const docNumber = (data.documentNumber || (isQuote ? 'QT-000001' : 'INV-000001')).replace(/[^a-zA-Z0-9_-]/g, '_');
   const filename = `${docType}_${docNumber}.pdf`;
 
-  const docDefinition = buildVectorPdfDefinition(data);
+  // Ensure Arial font is loaded to match Puppeteer typography
+  const activeFont = await loadArialFonts();
+
+  const docDefinition = buildVectorPdfDefinition(data, activeFont);
   const pdfDoc = anyPdfMake.createPdf(docDefinition);
 
   // In pdfmake 0.3+, getBlob() returns a Promise or accepts a callback
