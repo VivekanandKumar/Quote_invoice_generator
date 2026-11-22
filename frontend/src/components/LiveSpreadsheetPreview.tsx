@@ -163,21 +163,21 @@ export const LiveSpreadsheetPreview: React.FC<LiveSpreadsheetPreviewProps> = ({ 
           <table className="w-full border-collapse border border-slate-300 text-xs table-fixed">
             <thead>
               <tr className="bg-slate-100 text-slate-800 font-bold border-b-2 border-slate-400">
-                <th className="border border-slate-300 py-1.5 px-2 w-9 text-center">#</th>
-                <th className="border border-slate-300 py-1.5 px-3 text-left">Item & Description</th>
-                {showHsn && <th className="border border-slate-300 py-1.5 px-2 w-24 text-center">HSN/SAC Code</th>}
-                <th className="border border-slate-300 py-1.5 px-2 w-24 text-right">Qty</th>
-                <th className="border border-slate-300 py-1.5 px-2 w-24 text-right">Rate (₹)</th>
+                <th className="border border-slate-300 py-2 px-2 w-9 text-center align-middle whitespace-nowrap">#</th>
+                <th className="border border-slate-300 py-2 px-3 text-left align-middle whitespace-nowrap">Item & Description</th>
+                {showHsn && <th className="border border-slate-300 py-2 px-2 w-28 text-center align-middle whitespace-nowrap">HSN/SAC Code</th>}
+                <th className="border border-slate-300 py-2 px-2 w-22 text-right align-middle whitespace-nowrap">Qty</th>
+                <th className="border border-slate-300 py-2 px-2 w-24 text-right align-middle whitespace-nowrap">Rate (₹)</th>
                 {isIntraState && (
                   <>
-                    <th className="border border-slate-300 py-1.5 px-2 w-16 text-right">CGST</th>
-                    <th className="border border-slate-300 py-1.5 px-2 w-16 text-right">SGST</th>
+                    <th className="border border-slate-300 py-2 px-2 w-16 text-right align-middle whitespace-nowrap">CGST</th>
+                    <th className="border border-slate-300 py-2 px-2 w-16 text-right align-middle whitespace-nowrap">SGST</th>
                   </>
                 )}
                 {isInterState && (
-                  <th className="border border-slate-300 py-1.5 px-2 w-16 text-right">IGST</th>
+                  <th className="border border-slate-300 py-2 px-2 w-16 text-right align-middle whitespace-nowrap">IGST</th>
                 )}
-                <th className="border border-slate-300 py-1.5 px-3 w-32 text-right">Amount (₹)</th>
+                <th className="border border-slate-300 py-2 px-3 w-32 text-right align-middle whitespace-nowrap">Amount (₹)</th>
               </tr>
             </thead>
             <tbody>
