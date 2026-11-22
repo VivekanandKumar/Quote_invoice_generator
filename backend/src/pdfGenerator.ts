@@ -34,8 +34,13 @@ async function getExecutablePath(): Promise<string> {
     return process.env.PUPPETEER_EXECUTABLE_PATH;
   }
 
-  // Windows standard Chrome / Edge paths
+  // Standard Chrome / Chromium / Edge paths across Linux and Windows
   const standardPaths = [
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/google-chrome',
+    '/usr/bin/google-chrome-stable',
+    '/snap/bin/chromium',
     'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
     'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
     'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
