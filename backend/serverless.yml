@@ -6,8 +6,8 @@ provider:
   name: aws
   runtime: nodejs20.x
   region: ${opt:region, 'ap-south-1'}
-  memorySize: 1536 # Puppeteer & Chromium run best with at least 1536MB RAM on AWS Lambda
-  timeout: 29
+  memorySize: 256
+  timeout: 10
   environment:
     NODE_ENV: production
     MONGODB_URI: ${env:MONGODB_URI, ''}
@@ -18,19 +18,12 @@ provider:
       allowedHeaders:
         - Content-Type
         - Authorization
-        - Content-Disposition
       allowedMethods:
         - GET
         - POST
         - PUT
         - DELETE
         - OPTIONS
-      exposedResponseHeaders:
-        - Content-Disposition
-  apiGateway:
-    binaryMediaTypes:
-      - 'application/pdf'
-      - '*/*'
 
 package:
   individually: true
@@ -38,8 +31,6 @@ package:
     - '!**/*.test.ts'
     - '!**/*.md'
     - 'dist/**'
-    - 'bin/**'
-    - 'node_modules/@sparticuz/chromium/**'
     - 'package.json'
 
 functions:
