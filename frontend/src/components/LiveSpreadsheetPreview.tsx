@@ -165,7 +165,7 @@ export const LiveSpreadsheetPreview: React.FC<LiveSpreadsheetPreviewProps> = ({ 
               <tr className="bg-slate-100 text-slate-800 font-bold border-b-2 border-slate-400">
                 <th className="border border-slate-300 py-1.5 px-2 w-9 text-center">#</th>
                 <th className="border border-slate-300 py-1.5 px-3 text-left">Item & Description</th>
-                {showHsn && <th className="border border-slate-300 py-1.5 px-2 w-20 text-center">HSN/SAC</th>}
+                {showHsn && <th className="border border-slate-300 py-1.5 px-2 w-24 text-center">HSN/SAC Code</th>}
                 <th className="border border-slate-300 py-1.5 px-2 w-24 text-right">Qty</th>
                 <th className="border border-slate-300 py-1.5 px-2 w-24 text-right">Rate (₹)</th>
                 {isIntraState && (

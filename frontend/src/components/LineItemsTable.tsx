@@ -289,7 +289,7 @@ export const LineItemsTable: React.FC<LineItemsTableProps> = ({
             <tr className="border-b border-slate-200 bg-slate-50/75 text-[11px] font-semibold text-slate-600 uppercase tracking-wider">
               <th className="py-2.5 px-3 w-10 text-center">#</th>
               <th className="py-2.5 px-3 min-w-[220px]">Item & Description</th>
-              {showHsn && <th className="py-2.5 px-3 w-28 text-center">HSN/SAC</th>}
+              {showHsn && <th className="py-2.5 px-3 w-28 text-center">HSN/SAC Code</th>}
               <th className="py-2.5 px-3 w-32 text-right">Qty (with Unit)</th>
               <th className="py-2.5 px-3 w-28 text-right">Rate (₹)</th>
               {/* Tax columns depending on tax breakdown mode */}
@@ -332,14 +332,14 @@ export const LineItemsTable: React.FC<LineItemsTableProps> = ({
                   />
                 </td>
 
-                {/* Optional HSN/SAC */}
+                {/* Optional HSN/SAC Code */}
                 {showHsn && (
                   <td className="py-2.5 px-3 align-top pt-2.5">
                     <input
                       type="text"
                       value={item.hsnCode || ''}
                       onChange={(e) => updateItem(item.id, { hsnCode: e.target.value })}
-                      placeholder="HSN/SAC"
+                      placeholder="HSN/SAC Code"
                       className="w-full text-xs text-center text-slate-700 border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
                     />
                   </td>
