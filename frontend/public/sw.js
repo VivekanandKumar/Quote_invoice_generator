@@ -8,6 +8,7 @@ const STATIC_ASSETS = [
   './manifest.webmanifest',
   './pwa-192x192.png',
   './pwa-512x512.png',
+  './apple-touch-icon.png',
 ];
 
 // Install: Cache critical static shell

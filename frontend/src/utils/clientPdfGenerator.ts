@@ -142,7 +142,7 @@ export function buildInvoiceHtml(data: DocumentData): string {
           <tr>
             <th class="text-center" style="width: 36px;">#</th>
             <th>Item & Description</th>
-            ${showHsn ? '<th class="text-center" style="width: 75px;">HSN/SRN</th>' : ''}
+            ${showHsn ? '<th class="text-center" style="width: 75px;">HSN/SAC</th>' : ''}
             <th class="text-right" style="width: 85px;">Qty</th>
             <th class="text-right" style="width: 85px;">Rate (₹)</th>
             ${isIntraState ? `

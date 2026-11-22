@@ -12,7 +12,7 @@ A centralized web application to generate, preview, and download custom **Quotes
   - **Bill To**: Customer name, street address, city/state/PIN, phone, email, and GSTIN.
   - **Line Items Grid**:
     - Item Name & multi-line Description.
-    - **3 Optional Fields**: **HSN/SRN Code**, **CGST %**, and **IGST %**.
+    - **3 Optional Fields**: **HSN/SAC Code**, **CGST %**, and **IGST %**.
     - Quantity, Rate, and auto-computed Line Amount ($Qty \times Rate$).
     - Padded empty rows (up to 14 rows minimum) to maintain full-page invoice height just like your sample.
   - **Financial Summary**: Sub Total, optional CGST / SGST / IGST tax breakdowns, and Grand Total with double underline.

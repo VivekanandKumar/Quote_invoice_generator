@@ -210,10 +210,10 @@ export const LineItemsTable: React.FC<LineItemsTableProps> = ({
               </div>
             </div>
 
-            {/* Optional HSN/SRN */}
+            {/* Optional HSN/SAC */}
             {showHsn && (
               <div>
-                <label className="block text-[11px] font-medium text-slate-600 mb-1">HSN/SRN Code</label>
+                <label className="block text-[11px] font-medium text-slate-600 mb-1">HSN/SAC Code</label>
                 <input
                   type="text"
                   value={item.hsnCode || ''}
@@ -289,7 +289,7 @@ export const LineItemsTable: React.FC<LineItemsTableProps> = ({
             <tr className="border-b border-slate-200 bg-slate-50/75 text-[11px] font-semibold text-slate-600 uppercase tracking-wider">
               <th className="py-2.5 px-3 w-10 text-center">#</th>
               <th className="py-2.5 px-3 min-w-[220px]">Item & Description</th>
-              {showHsn && <th className="py-2.5 px-3 w-28 text-center">HSN/SRN</th>}
+              {showHsn && <th className="py-2.5 px-3 w-28 text-center">HSN/SAC</th>}
               <th className="py-2.5 px-3 w-32 text-right">Qty (with Unit)</th>
               <th className="py-2.5 px-3 w-28 text-right">Rate (₹)</th>
               {/* Tax columns depending on tax breakdown mode */}
@@ -332,7 +332,7 @@ export const LineItemsTable: React.FC<LineItemsTableProps> = ({
                   />
                 </td>
 
-                {/* Optional HSN/SRN */}
+                {/* Optional HSN/SAC */}
                 {showHsn && (
                   <td className="py-2.5 px-3 align-top pt-2.5">
                     <input

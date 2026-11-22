@@ -110,7 +110,7 @@ export const DocumentMetaForm: React.FC<DocumentMetaFormProps> = ({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {/* HSN/SRN Toggle */}
+          {/* HSN/SAC Toggle */}
           <label className="flex items-center space-x-2.5 bg-slate-50 hover:bg-slate-100 p-2.5 rounded-lg border border-slate-200 cursor-pointer transition-colors">
             <input
               type="checkbox"
@@ -119,7 +119,7 @@ export const DocumentMetaForm: React.FC<DocumentMetaFormProps> = ({
               className="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4 shrink-0 cursor-pointer"
             />
             <span className="text-xs text-slate-700 font-medium">
-              Include HSN/SRN Column
+              Include HSN/SAC Column
             </span>
           </label>
 

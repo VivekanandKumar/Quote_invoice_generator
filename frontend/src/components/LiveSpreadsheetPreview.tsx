@@ -53,7 +53,7 @@ export const LiveSpreadsheetPreview: React.FC<LiveSpreadsheetPreviewProps> = ({ 
 
   // Synchronized ColSpan Calculation (matches PDF 100%):
   // Columns before Amount: # (1), Item & Description (1), Qty (1), Rate (1) = 4
-  // Plus HSN/SRN if enabled (+1)
+  // Plus HSN/SAC if enabled (+1)
   // Plus CGST & SGST (+2) for Intra-state OR IGST (+1) for Inter-state
   const taxColsCount = isIntraState ? 2 : isInterState ? 1 : 0;
   const summaryColSpan = 4 + (showHsn ? 1 : 0) + taxColsCount;
@@ -165,7 +165,7 @@ export const LiveSpreadsheetPreview: React.FC<LiveSpreadsheetPreviewProps> = ({ 
               <tr className="bg-slate-100 text-slate-800 font-bold border-b-2 border-slate-400">
                 <th className="border border-slate-300 py-1.5 px-2 w-9 text-center">#</th>
                 <th className="border border-slate-300 py-1.5 px-3 text-left">Item & Description</th>
-                {showHsn && <th className="border border-slate-300 py-1.5 px-2 w-20 text-center">HSN/SRN</th>}
+                {showHsn && <th className="border border-slate-300 py-1.5 px-2 w-20 text-center">HSN/SAC</th>}
                 <th className="border border-slate-300 py-1.5 px-2 w-24 text-right">Qty</th>
                 <th className="border border-slate-300 py-1.5 px-2 w-24 text-right">Rate (₹)</th>
                 {isIntraState && (
