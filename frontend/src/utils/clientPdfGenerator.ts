@@ -11,7 +11,7 @@ function parseNumericQty(val: string | number | undefined): number {
 }
 
 /**
- * Builds the standalone HTML string matching the original Excel / Puppeteer template 1:1
+ * Builds the standalone HTML string matching Puppeteer / invoiceTemplate.ts 100% identically
  */
 export function buildInvoiceHtml(data: DocumentData): string {
   const isQuote = data.documentType === 'QUOTE';
@@ -68,7 +68,7 @@ export function buildInvoiceHtml(data: DocumentData): string {
     };
   });
 
-  // Calculate empty padded rows (matches original 14 minimum rows)
+  // Calculate empty padded rows (exact 14 rows minimum matching original sheet)
   const padToRows = data.padToRows || 14;
   const totalRows = Math.max(data.lineItems.length, padToRows);
   const emptyRowCount = Math.max(0, totalRows - data.lineItems.length);
@@ -90,8 +90,9 @@ export function buildInvoiceHtml(data: DocumentData): string {
 
   return `
     <div class="invoice-container">
-      <!-- Header Row: Sender (Left) & Title/Meta (Right) -->
+      <!-- Top Header Row -->
       <div class="header-row">
+        <!-- Left: Sender Details -->
         <div class="sender-details">
           <div class="company-title">${data.sender.companyName || 'Business Name'}</div>
           ${senderAddress ? `<div class="sender-address">${senderAddress}</div>` : ''}
@@ -100,135 +101,148 @@ export function buildInvoiceHtml(data: DocumentData): string {
           ${senderGstin ? `<div class="sender-line">GSTIN - <span class="gstin-val">${senderGstin}</span></div>` : ''}
         </div>
 
+        <!-- Right: Document Type Title and Quote/Invoice Meta Section Directly Below -->
         <div class="header-right">
-          <div class="doc-type-title">${docTypeName}</div>
-          <table class="meta-table">
-            <tbody>
+          <div class="doc-type-title">
+            ${docTypeName}
+          </div>
+          <div class="doc-meta-box">
+            <table class="doc-meta-table">
               <tr>
-                <td class="meta-key">${docNumLabel}</td>
-                <td class="meta-val">: ${data.documentNumber || '—'}</td>
+                <td class="meta-label">${docNumLabel}</td>
+                <td class="meta-value">: ${data.documentNumber || '—'}</td>
               </tr>
               <tr>
-                <td class="meta-key">${docDateLabel}</td>
-                <td class="meta-val">: ${data.documentDate || '—'}</td>
+                <td class="meta-label">${docDateLabel}</td>
+                <td class="meta-value">: ${data.documentDate || '—'}</td>
               </tr>
               ${data.dueDate ? `
               <tr>
-                <td class="meta-key">Due Date</td>
-                <td class="meta-val">: ${data.dueDate}</td>
+                <td class="meta-label">Due Date</td>
+                <td class="meta-value">: ${data.dueDate}</td>
               </tr>` : ''}
-            </tbody>
-          </table>
+            </table>
+          </div>
         </div>
       </div>
 
-      <!-- Bill To Section -->
+      <!-- Bill To Section (Below sender on the left) -->
       <div class="bill-to-section">
         <div class="bill-to-title">Bill To</div>
         <div class="customer-name">${data.customer.name || 'Customer Name'}</div>
         ${customerAddress ? `<div class="customer-address">${customerAddress}</div>` : ''}
-        ${data.customer.phone ? `<div class="customer-line">Mobile - ${data.customer.phone}</div>` : ''}
-        ${data.customer.email ? `<div class="customer-line">Email - ${data.customer.email}</div>` : ''}
-        ${customerGstin ? `<div class="customer-line">GSTIN - <span class="gstin-val">${customerGstin}</span></div>` : ''}
+        ${data.customer.phone ? `<div class="customer-line">Mobile: ${data.customer.phone}</div>` : ''}
+        ${data.customer.email ? `<div class="customer-line">Email: ${data.customer.email}</div>` : ''}
+        ${customerGstin ? `<div class="customer-line">GSTIN: <span class="gstin-val">${customerGstin}</span></div>` : ''}
       </div>
 
-      <!-- Line Items Spreadsheet Table -->
+      <!-- Items Table -->
       <table class="items-table">
         <thead>
           <tr>
-            <th style="width: 38px; text-align: center;">#</th>
-            <th style="text-align: left; width: ${showHsn ? '38%' : '48%'};">Item & Description</th>
-            ${showHsn ? '<th style="width: 76px; text-align: center;">HSN/SRN</th>' : ''}
-            <th style="width: 80px; text-align: right;">Qty</th>
-            <th style="width: 88px; text-align: right;">Rate (₹)</th>
+            <th class="text-center" style="width: 36px;">#</th>
+            <th>Item & Description</th>
+            ${showHsn ? '<th class="text-center" style="width: 75px;">HSN/SRN</th>' : ''}
+            <th class="text-right" style="width: 85px;">Qty</th>
+            <th class="text-right" style="width: 85px;">Rate (₹)</th>
             ${isIntraState ? `
-              <th style="width: 62px; text-align: right;">CGST</th>
-              <th style="width: 62px; text-align: right;">SGST</th>
+            <th class="text-right" style="width: 60px;">CGST</th>
+            <th class="text-right" style="width: 60px;">SGST</th>
             ` : ''}
             ${isInterState ? `
-              <th style="width: 72px; text-align: right;">IGST</th>
+            <th class="text-right" style="width: 65px;">IGST</th>
             ` : ''}
-            <th style="width: 104px; text-align: right;">Amount (₹)</th>
+            <th class="text-right" style="width: 105px;">Amount (₹)</th>
           </tr>
         </thead>
         <tbody>
+          <!-- Line Items -->
           ${formattedItems.map(item => `
-            <tr>
-              <td class="cell-center" style="font-weight: 500;">${item.index}</td>
-              <td class="cell-left">
-                <div class="item-name">${item.name}</div>
-                ${item.description ? `<div class="item-desc">${item.description}</div>` : ''}
-              </td>
-              ${showHsn ? `<td class="cell-center font-mono">${item.hsnCode}</td>` : ''}
-              <td class="cell-right">${item.qtyDisplay}</td>
-              <td class="cell-right font-mono">${item.rateDisplay}</td>
-              ${isIntraState ? `
-                <td class="cell-right font-mono">${item.cgstDisplay}</td>
-                <td class="cell-right font-mono">${item.sgstDisplay}</td>
-              ` : ''}
-              ${isInterState ? `
-                <td class="cell-right font-mono">${item.igstDisplay}</td>
-              ` : ''}
-              <td class="cell-right font-mono" style="font-weight: 600;">${item.amountDisplay}</td>
-            </tr>
+          <tr>
+            <td class="text-center" style="color: #64748b;">${item.index}</td>
+            <td>
+              <div class="item-name">${item.name}</div>
+              ${item.description ? `<div class="item-desc">${item.description}</div>` : ''}
+            </td>
+            ${showHsn ? `<td class="text-center" style="font-family: monospace;">${item.hsnCode}</td>` : ''}
+            <td class="text-right font-medium">${item.qtyDisplay}</td>
+            <td class="text-right">${item.rateDisplay}</td>
+            ${isIntraState ? `
+            <td class="text-right">${item.cgstDisplay}</td>
+            <td class="text-right">${item.sgstDisplay}</td>
+            ` : ''}
+            ${isInterState ? `
+            <td class="text-right">${item.igstDisplay}</td>
+            ` : ''}
+            <td class="text-right" style="font-weight: bold; color: #0f172a;">${item.amountDisplay}</td>
+          </tr>
           `).join('')}
 
+          <!-- Empty Padded Rows -->
           ${emptyRows.map(row => `
-            <tr class="empty-row">
-              <td class="cell-center text-muted">${row.rowNum}</td>
-              <td class="cell-left">&nbsp;</td>
-              ${showHsn ? '<td class="cell-center">&nbsp;</td>' : ''}
-              <td class="cell-right">&nbsp;</td>
-              <td class="cell-right">&nbsp;</td>
-              ${isIntraState ? '<td class="cell-right">&nbsp;</td><td class="cell-right">&nbsp;</td>' : ''}
-              ${isInterState ? '<td class="cell-right">&nbsp;</td>' : ''}
-              <td class="cell-right">&nbsp;</td>
-            </tr>
+          <tr class="empty-row">
+            <td class="text-center" style="color: #94a3b8; font-size: 10px;">${row.rowNum}</td>
+            <td></td>
+            ${showHsn ? '<td></td>' : ''}
+            <td></td>
+            <td></td>
+            ${isIntraState ? '<td></td><td></td>' : ''}
+            ${isInterState ? '<td></td>' : ''}
+            <td></td>
+          </tr>
           `).join('')}
 
-          <!-- Summary Rows -->
-          <tr class="summary-subtotal-row">
-            <td colspan="${summaryColSpan}" class="summary-label">Sub Total:</td>
-            <td class="summary-val font-mono">₹ ${formatCurrency(subTotal)}</td>
+          <!-- Sub Total -->
+          <tr class="summary-row">
+            <td colspan="${summaryColSpan}" class="summary-label">Sub Total</td>
+            <td class="summary-value">₹ ${formatCurrency(subTotal)}</td>
           </tr>
 
+          <!-- CGST / SGST if applicable -->
           ${isIntraState ? `
-            <tr class="summary-tax-row">
-              <td colspan="${summaryColSpan}" class="summary-label">CGST (${data.taxSettings?.cgstRate ?? 9}%):</td>
-              <td class="summary-val font-mono">₹ ${formatCurrency(cgstAmount)}</td>
-            </tr>
-            <tr class="summary-tax-row">
-              <td colspan="${summaryColSpan}" class="summary-label">SGST (${data.taxSettings?.sgstRate ?? 9}%):</td>
-              <td class="summary-val font-mono">₹ ${formatCurrency(sgstAmount)}</td>
-            </tr>
+          <tr class="summary-row">
+            <td colspan="${summaryColSpan}" class="summary-label" style="font-weight: normal; color: #475569;">
+              CGST (${data.taxSettings?.cgstRate ?? 9}%)
+            </td>
+            <td class="summary-value" style="font-weight: normal;">₹ ${formatCurrency(cgstAmount)}</td>
+          </tr>
+          <tr class="summary-row">
+            <td colspan="${summaryColSpan}" class="summary-label" style="font-weight: normal; color: #475569;">
+              SGST (${data.taxSettings?.sgstRate ?? 9}%)
+            </td>
+            <td class="summary-value" style="font-weight: normal;">₹ ${formatCurrency(sgstAmount)}</td>
+          </tr>
           ` : ''}
 
+          <!-- IGST if applicable -->
           ${isInterState ? `
-            <tr class="summary-tax-row">
-              <td colspan="${summaryColSpan}" class="summary-label">IGST (${data.taxSettings?.igstRate ?? 18}%):</td>
-              <td class="summary-val font-mono">₹ ${formatCurrency(igstAmount)}</td>
-            </tr>
+          <tr class="summary-row">
+            <td colspan="${summaryColSpan}" class="summary-label" style="font-weight: normal; color: #475569;">
+              IGST (${data.taxSettings?.igstRate ?? 18}%)
+            </td>
+            <td class="summary-value" style="font-weight: normal;">₹ ${formatCurrency(igstAmount)}</td>
+          </tr>
           ` : ''}
 
-          <tr class="grand-total-row">
-            <td colspan="${summaryColSpan}" class="grand-total-label">Grand Total:</td>
-            <td class="grand-total-val font-mono">₹ ${formatCurrency(grandTotal)}</td>
+          <!-- Grand Total -->
+          <tr class="summary-row total-row">
+            <td colspan="${summaryColSpan}" class="summary-label" style="font-size: 12px; color: #0f172a;">Total</td>
+            <td class="summary-value total-value">₹ ${formatCurrency(grandTotal)}</td>
           </tr>
         </tbody>
       </table>
 
-      <!-- Bottom Notes & Terms Section -->
+      <!-- Notes & Terms -->
       ${notesText ? `
-        <div class="notes-container">
-          <div class="notes-title">Notes / Terms:</div>
-          <div class="notes-body">${notesText}</div>
-        </div>
+      <div class="notes-section">
+        ${notesText}
+      </div>
       ` : ''}
     </div>
   `;
 }
 
-// 100% matched typography and styles from original Excel / Puppeteer template
+// 100% matched typography and styles directly from Puppeteer / invoiceTemplate.ts
 const INVOICE_CSS = `
   * {
     box-sizing: border-box;
@@ -236,11 +250,9 @@ const INVOICE_CSS = `
     padding: 0;
   }
   body {
-    background: #ffffff;
-    margin: 0;
-    padding: 0;
     font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
     color: #111827;
+    background: #ffffff;
     font-size: 11px;
     line-height: 1.4;
     -webkit-font-smoothing: antialiased;
@@ -248,16 +260,17 @@ const INVOICE_CSS = `
   }
   .invoice-container {
     width: 794px;
-    padding: 22px 26px;
+    margin: 0 auto;
+    padding: 30px 30px 24px 30px;
     background: #ffffff;
     box-sizing: border-box;
   }
+
+  /* Header Section */
   .header-row {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #e2e8f0;
     margin-bottom: 12px;
   }
   .sender-details {
@@ -268,7 +281,6 @@ const INVOICE_CSS = `
     font-weight: bold;
     color: #0f172a;
     margin-bottom: 3px;
-    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
   }
   .sender-address {
     font-size: 11px;
@@ -286,8 +298,9 @@ const INVOICE_CSS = `
     text-transform: uppercase;
     font-weight: 600;
     letter-spacing: 0.5px;
-    color: #0f172a;
   }
+
+  /* Right Header: Doc Title + Quote/Invoice Meta Section Directly Below */
   .header-right {
     display: flex;
     flex-direction: column;
@@ -299,33 +312,37 @@ const INVOICE_CSS = `
     font-weight: 900;
     letter-spacing: 1.5px;
     color: #1e293b;
-    margin-bottom: 4px;
+    margin-bottom: 5px;
     line-height: 1;
-    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
   }
-  .meta-table {
+  .doc-meta-box {
+    margin-top: 3px;
+  }
+  .doc-meta-table {
     border-collapse: collapse;
     margin-left: auto;
   }
-  .meta-table td {
+  .doc-meta-table td {
     padding: 1.5px 0 1.5px 6px;
     font-size: 11px;
     vertical-align: middle;
   }
-  .meta-key {
+  .meta-label {
     font-weight: bold;
     color: #334155;
     text-align: left;
     white-space: nowrap;
   }
-  .meta-val {
+  .meta-value {
     color: #0f172a;
     text-align: left;
     white-space: nowrap;
     font-weight: 500;
   }
+
+  /* Bill To Section */
   .bill-to-section {
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     max-width: 60%;
   }
   .bill-to-title {
@@ -351,15 +368,17 @@ const INVOICE_CSS = `
     font-size: 11px;
     color: #334155;
   }
+
+  /* Line Items Table */
   .items-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 8px;
-    margin-bottom: 10px;
     border: 1px solid #94a3b8;
+    margin-top: 14px;
+    margin-bottom: 12px;
     table-layout: fixed;
   }
-  .items-table thead th {
+  .items-table th {
     background-color: #f1f5f9;
     color: #0f172a;
     font-weight: bold;
@@ -368,25 +387,18 @@ const INVOICE_CSS = `
     border: 1px solid #cbd5e1;
     border-bottom: 2px solid #94a3b8;
     text-align: left;
-    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
   }
-  .items-table tbody td {
-    padding: 4.5px 8px;
+  .items-table td {
+    padding: 5px 8px;
     border: 1px solid #e2e8f0;
     font-size: 10.5px;
     vertical-align: top;
     word-break: break-word;
-    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
   }
-  .cell-center {
-    text-align: center;
-  }
-  .cell-left {
-    text-align: left;
-  }
-  .cell-right {
-    text-align: right;
-  }
+  .text-center { text-align: center; }
+  .text-right { text-align: right; }
+  .text-left { text-align: left; }
+
   .item-name {
     font-weight: 600;
     color: #0f172a;
@@ -397,76 +409,55 @@ const INVOICE_CSS = `
     white-space: pre-line;
     margin-top: 2px;
   }
-  .font-mono {
-    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
-  }
-  .text-muted {
-    color: #94a3b8;
-  }
+
+  /* Empty padded row */
   .empty-row td {
-    height: 19px;
+    height: 20px;
     border: 1px solid #e2e8f0;
     color: #94a3b8;
   }
-  .summary-subtotal-row td,
-  .summary-tax-row td {
+
+  /* Summary Rows */
+  .summary-row td {
     border: 1px solid #cbd5e1;
-    padding: 4.5px 8px;
+    padding: 6px 8px;
   }
   .summary-label {
     font-weight: bold;
     text-align: right;
     color: #1e293b;
-    font-size: 10.5px;
   }
-  .summary-val {
+  .summary-value {
     font-weight: bold;
     text-align: right;
     color: #0f172a;
-    font-size: 10.5px;
     white-space: nowrap;
   }
-  .grand-total-row td {
+  .total-row td {
     background-color: #f8fafc;
-    border: 1px solid #cbd5e1;
+    font-size: 12px;
+    font-weight: bold;
     border-top: 2px solid #64748b;
     border-bottom: 3px double #0f172a;
-    padding: 6px 8px;
   }
-  .grand-total-label {
-    text-align: right;
-    font-size: 11.5px;
-    font-weight: bold;
-    color: #0f172a;
-    text-transform: uppercase;
-  }
-  .grand-total-val {
-    text-align: right;
-    font-size: 12.5px;
-    font-weight: bold;
+  .total-value {
     color: #047857;
-    white-space: nowrap;
+    font-size: 12.5px;
   }
-  .notes-container {
-    margin-top: 10px;
+
+  /* Notes Section */
+  .notes-section {
+    margin-top: 16px;
     font-size: 10.5px;
     color: #334155;
-    line-height: 1.45;
-  }
-  .notes-title {
-    font-weight: bold;
-    color: #334155;
-    margin-bottom: 2px;
-  }
-  .notes-body {
-    color: #475569;
     white-space: pre-line;
+    line-height: 1.5;
   }
 `;
 
 /**
- * Generates an A4 PDF Blob client-side in the browser using an isolated iframe,
- * html2canvas, and jsPDF.
+ * Generates an A4 PDF Blob client-side in the browser using the EXACT Puppeteer template,
+ * rendered at high-DPI (scale: 3 = 288 DPI print sharpness) in lossless PNG.
  * 
  * Accurately fits content to 1 page without generating an accidental blank page 2.
  */
@@ -483,8 +474,8 @@ export async function generateClientPdfBlob(
   iframe.style.position = 'fixed';
   iframe.style.left = '-9999px';
   iframe.style.top = '0';
-  iframe.style.width = '800px';
-  iframe.style.height = '1150px';
+  iframe.style.width = '794px';
+  iframe.style.height = '1123px';
   iframe.style.border = 'none';
   iframe.style.visibility = 'hidden';
   document.body.appendChild(iframe);
@@ -503,29 +494,29 @@ export async function generateClientPdfBlob(
       <meta charset="utf-8">
       <style>${INVOICE_CSS}</style>
     </head>
-    <body>
+    <body style="background: #ffffff; margin: 0; padding: 0;">
       ${buildInvoiceHtml(data)}
     </body>
     </html>
   `);
   iframeDoc.close();
 
-  // Wait for layout and fonts to settle in the iframe
-  await new Promise((resolve) => setTimeout(resolve, 60));
+  // Wait for layout and web fonts to settle in the iframe
+  await new Promise((resolve) => setTimeout(resolve, 80));
 
   try {
     const targetElement = (iframeDoc.querySelector('.invoice-container') as HTMLElement) || iframeDoc.body;
 
-    // Capture high-resolution canvas inside the isolated iframe context (scale: 2 = 192 DPI print sharpness)
+    // Capture ultra-sharp 300 DPI canvas (scale: 3 = 288 DPI laser-print resolution)
     const canvas = await html2canvas(targetElement, {
-      scale: 2,
+      scale: 3,
       useCORS: true,
       logging: false,
       backgroundColor: '#ffffff',
-      windowWidth: 800,
+      windowWidth: 794,
     });
 
-    // Create A4 PDF in jsPDF
+    // Create standard A4 PDF in jsPDF
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
@@ -535,30 +526,28 @@ export async function generateClientPdfBlob(
 
     const pdfWidth = 210;
     const pdfHeight = 297;
-    const imgData = canvas.toDataURL('image/jpeg', 0.98);
+    // Lossless PNG encoding for tack-sharp typography without JPEG compression blur
+    const imgData = canvas.toDataURL('image/png');
 
     // Calculate proportional height in millimeters
     const imgHeight = (canvas.height * pdfWidth) / canvas.width;
 
     // Single-page invoice fit:
-    // If the content height is within standard A4 (+ 25mm margin headroom), fit cleanly onto exactly 1 page
-    // to strictly prevent an accidental trailing blank 2nd page!
-    if (imgHeight <= pdfHeight + 25) {
+    // If the content height is within standard A4 (+ 20mm margin headroom), fit cleanly onto exactly 1 page
+    if (imgHeight <= pdfHeight + 20) {
       const renderHeight = Math.min(imgHeight, pdfHeight);
-      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, renderHeight, undefined, 'FAST');
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, renderHeight, undefined, 'FAST');
     } else {
-      // True multi-page handling only when line items genuinely exceed A4 height
       let heightLeft = imgHeight;
       let position = 0;
 
-      pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight, undefined, 'FAST');
+      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight, undefined, 'FAST');
       heightLeft -= pdfHeight;
 
-      // Only add a new page if more than 30mm of real content remains
-      while (heightLeft > 30) {
+      while (heightLeft > 25) {
         position = heightLeft - imgHeight;
         pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight, undefined, 'FAST');
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight, undefined, 'FAST');
         heightLeft -= pdfHeight;
       }
     }
