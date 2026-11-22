@@ -80,8 +80,8 @@ export function App() {
       setDownloadSuccess(result.filename);
       setTimeout(() => setDownloadSuccess(null), 4000);
     } catch (err: any) {
-      console.error('Download error:', err);
-      setErrorMessage(err.message || 'Failed to generate PDF. Make sure backend is running.');
+      console.error('Print error:', err);
+      setErrorMessage(err.message || 'Failed to open print dialog. Please allow popups.');
     } finally {
       setIsDownloading(false);
     }
@@ -94,7 +94,7 @@ export function App() {
       await previewPdf(data);
     } catch (err: any) {
       console.error('Preview error:', err);
-      setErrorMessage(err.message || 'Failed to preview PDF. Make sure backend is running.');
+      setErrorMessage(err.message || 'Failed to open preview tab. Please allow popups.');
     } finally {
       setIsPreviewing(false);
     }

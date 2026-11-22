@@ -1,52 +1,43 @@
 import type { DocumentData } from '../types/invoice';
-import { generateClientPdfBlob } from './clientPdfGenerator';
+import { buildPrintableHtml } from './nativePrintGenerator';
 
 /**
- * Generates the PDF Blob instantly in the browser.
- * 0 timeouts, 0 server costs, exact Puppeteer-identical typography at 288 DPI.
- */
-async function getPdfBlob(
-  documentData: DocumentData
-): Promise<{ blob: Blob; filename: string }> {
-  return await generateClientPdfBlob(documentData);
-}
-
-/**
- * Downloads the generated PDF file directly to the user's computer
+ * Opens the invoice in a new dedicated tab with full vector typography,
+ * preview toolbar, and automatically triggers the browser's native Print / Save as PDF dialog.
  */
 export async function downloadPdf(
   documentData: DocumentData
 ): Promise<{ success: boolean; filename: string }> {
-  const { blob, filename } = await getPdfBlob(documentData);
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+  const isQuote = documentData.documentType === 'QUOTE';
+  const docType = isQuote ? 'QUOTE' : 'INVOICE';
+  const docNumber = (documentData.documentNumber || (isQuote ? 'QT-000001' : 'INV-000001')).replace(/[^a-zA-Z0-9_-]/g, '_');
+  const filename = `${docType}_${docNumber}.pdf`;
+
+  // Open window synchronously in response to user click to avoid popup blockers
+  const printWindow = window.open('about:blank', '_blank');
+  if (!printWindow) {
+    throw new Error('Please allow popups for this site to open the print & PDF dialog.');
+  }
+
+  const html = buildPrintableHtml(documentData, { autoPrint: true, showToolbar: true });
+  printWindow.document.open();
+  printWindow.document.write(html);
+  printWindow.document.close();
 
   return { success: true, filename };
 }
 
 /**
- * Opens the rendered PDF directly in a new browser tab for immediate viewing/printing
+ * Opens the invoice in a new tab for vector preview without immediately popping the print dialog.
  */
 export async function previewPdf(documentData: DocumentData): Promise<void> {
-  // Pre-open blank tab synchronously in response to user click to avoid popup blocker
-  const newTab = window.open('about:blank', '_blank');
-  try {
-    const { blob } = await getPdfBlob(documentData);
-    const url = window.URL.createObjectURL(blob);
-    if (newTab) {
-      newTab.location.href = url;
-    } else {
-      window.open(url, '_blank');
-    }
-    setTimeout(() => window.URL.revokeObjectURL(url), 60000);
-  } catch (error) {
-    if (newTab) newTab.close();
-    throw error;
+  const printWindow = window.open('about:blank', '_blank');
+  if (!printWindow) {
+    throw new Error('Please allow popups for this site to preview the invoice.');
   }
+
+  const html = buildPrintableHtml(documentData, { autoPrint: false, showToolbar: true });
+  printWindow.document.open();
+  printWindow.document.write(html);
+  printWindow.document.close();
 }

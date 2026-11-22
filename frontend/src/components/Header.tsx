@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, Download, RefreshCw, Eye, CheckCircle2 } from 'lucide-react';
+import { FileText, Printer, RefreshCw, Eye, CheckCircle2 } from 'lucide-react';
 import type { DocumentType } from '../types/invoice';
 
 interface HeaderProps {
@@ -39,7 +39,7 @@ export const Header: React.FC<HeaderProps> = ({
                   Quote & Invoice Generator
                 </h1>
                 <p className="text-[10px] sm:text-xs text-slate-500 truncate">
-                  PDF Generator &bull; Powered by Puppeteer
+                  PDF &amp; Quote Generator &bull; Fast Vector Print
                 </p>
               </div>
             </div>
@@ -108,13 +108,13 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </button>
 
-            {/* Download Button */}
+            {/* Print / Save as PDF Button */}
             <button
               type="button"
               onClick={onDownload}
               disabled={isDownloading || isPreviewing}
               className="min-w-0 inline-flex items-center justify-center px-2 sm:px-4 py-1.5 sm:py-2 text-xs font-semibold rounded-lg text-white bg-rose-600 hover:bg-rose-700 active:bg-rose-800 shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              title="Download PDF file"
+              title="Print or Save as PDF"
             >
               {isDownloading ? (
                 <>
@@ -122,12 +122,12 @@ export const Header: React.FC<HeaderProps> = ({
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  <span className="truncate">Saving...</span>
+                  <span className="truncate">Opening...</span>
                 </>
               ) : (
                 <>
-                  <Download className="w-3.5 h-3.5 mr-1 shrink-0" />
-                  <span className="truncate">Download</span>
+                  <Printer className="w-3.5 h-3.5 mr-1 shrink-0" />
+                  <span className="truncate">Print / PDF</span>
                 </>
               )}
             </button>
