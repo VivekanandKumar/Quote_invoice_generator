@@ -1,14 +1,32 @@
 import puppeteer, { Browser } from 'puppeteer-core';
 import chromium from '@sparticuz/chromium';
 import fs from 'fs';
+import path from 'path';
 import { DocumentData } from './types';
 import { renderInvoiceWithHandlebars } from './templates/invoiceTemplate';
+
+// Locate the Chromium Brotli binary files in AWS Lambda
+function getChromiumBinPath(): string | undefined {
+  const candidatePaths = [
+    path.join('/var/task', 'bin'),
+    path.join(process.cwd(), 'bin'),
+    path.join('/var/task', 'node_modules', '@sparticuz', 'chromium', 'bin'),
+    path.join(process.cwd(), 'node_modules', '@sparticuz', 'chromium', 'bin'),
+  ];
+  for (const p of candidatePaths) {
+    if (fs.existsSync(p)) {
+      return p;
+    }
+  }
+  return undefined;
+}
 
 // Helper to find a suitable Chromium/Chrome executable
 async function getExecutablePath(): Promise<string> {
   // If running in AWS Lambda
   if (process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT) {
-    return await chromium.executablePath();
+    const binPath = getChromiumBinPath();
+    return await chromium.executablePath(binPath);
   }
 
   // If custom path provided in environment

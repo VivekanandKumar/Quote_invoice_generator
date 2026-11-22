@@ -16,6 +16,7 @@ dist-ssr/
 # Serverless Framework artifacts
 .serverless/
 .build/
+backend/bin/
 *.zip
 *.tar.gz
 *.tgz

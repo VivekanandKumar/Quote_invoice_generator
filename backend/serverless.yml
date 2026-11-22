@@ -7,7 +7,7 @@ provider:
   runtime: nodejs20.x
   region: us-east-1
   memorySize: 1536 # Puppeteer & Chromium run best with at least 1536MB RAM on AWS Lambda
-  timeout: 30
+  timeout: 29
   environment:
     NODE_ENV: production
     MONGODB_URI: ${env:MONGODB_URI, ''}
@@ -38,6 +38,8 @@ package:
     - '!**/*.test.ts'
     - '!**/*.md'
     - 'dist/**'
+    - 'bin/**'
+    - 'node_modules/@sparticuz/chromium/**'
     - 'package.json'
 
 functions:

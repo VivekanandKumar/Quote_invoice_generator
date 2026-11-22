@@ -6,7 +6,7 @@
   "private": true,
   "scripts": {
     "dev": "bun run --watch src/server.ts",
-    "build": "bun build src/server.ts --outdir ./dist --target node && bun build src/lambda.ts --outdir ./dist --target node",
+    "build": "bun build src/server.ts --outdir ./dist --target node && bun build src/lambda.ts --outdir ./dist --target node --external @sparticuz/chromium",
     "start": "bun run dist/server.js"
   },
   "devDependencies": {
