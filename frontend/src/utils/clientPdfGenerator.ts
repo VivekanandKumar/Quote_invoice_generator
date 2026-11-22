@@ -140,19 +140,19 @@ export function buildInvoiceHtml(data: DocumentData): string {
       <table class="items-table">
         <thead>
           <tr>
-            <th class="text-center" style="width: 36px;">#</th>
-            <th>Item & Description</th>
-            ${showHsn ? '<th class="text-center" style="width: 102px;">HSN/SAC Code</th>' : ''}
-            <th class="text-right" style="width: 78px;">Qty</th>
-            <th class="text-right" style="width: 82px;">Rate (₹)</th>
+            <th class="text-center" style="width: 36px;"><div class="th-inner">#</div></th>
+            <th><div class="th-inner">Item & Description</div></th>
+            ${showHsn ? '<th class="text-center" style="width: 102px;"><div class="th-inner">HSN/SAC Code</div></th>' : ''}
+            <th class="text-right" style="width: 78px;"><div class="th-inner">Qty</div></th>
+            <th class="text-right" style="width: 82px;"><div class="th-inner">Rate (₹)</div></th>
             ${isIntraState ? `
-            <th class="text-right" style="width: 58px;">CGST</th>
-            <th class="text-right" style="width: 58px;">SGST</th>
+            <th class="text-right" style="width: 58px;"><div class="th-inner">CGST</div></th>
+            <th class="text-right" style="width: 58px;"><div class="th-inner">SGST</div></th>
             ` : ''}
             ${isInterState ? `
-            <th class="text-right" style="width: 64px;">IGST</th>
+            <th class="text-right" style="width: 64px;"><div class="th-inner">IGST</div></th>
             ` : ''}
-            <th class="text-right" style="width: 104px;">Amount (₹)</th>
+            <th class="text-right" style="width: 104px;"><div class="th-inner">Amount (₹)</div></th>
           </tr>
         </thead>
         <tbody>
@@ -383,13 +383,28 @@ const INVOICE_CSS = `
     color: #0f172a;
     font-weight: bold;
     font-size: 10.5px;
-    line-height: 1.25;
-    padding: 8px 8px 7px 8px;
-    vertical-align: middle !important;
+    padding: 0;
+    margin: 0;
     border: 1px solid #cbd5e1;
     border-bottom: 2px solid #94a3b8;
     text-align: left;
     white-space: nowrap;
+    vertical-align: middle;
+  }
+  .th-inner {
+    padding: 4px 8px 6px 8px;
+    line-height: 14px;
+    display: block;
+    box-sizing: border-box;
+  }
+  .text-center .th-inner {
+    text-align: center;
+  }
+  .text-right .th-inner {
+    text-align: right;
+  }
+  .text-left .th-inner {
+    text-align: left;
   }
   .items-table td {
     padding: 5px 8px;
