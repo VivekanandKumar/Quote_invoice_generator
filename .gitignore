@@ -13,6 +13,13 @@ dist/
 dist-ssr/
 *.local
 
+# Serverless Framework artifacts
+.serverless/
+.build/
+*.zip
+*.tar.gz
+*.tgz
+
 # Environment variables
 .env
 .env.*
